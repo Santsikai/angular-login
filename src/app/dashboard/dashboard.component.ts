@@ -60,6 +60,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   taskDecisionManual = false;
   taskDecisionWorkedSeconds = 0;
   taskDecisionPlannedMinutes = 0;
+  celebrationOpen = false;
+  celebrationTaskTitle = '';
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private sessionTaskIndex = -1;
@@ -296,12 +298,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
     if (finished) {
+      const completedTitle = this.tasks[this.taskDecisionIndex].title;
       this.tasks[this.taskDecisionIndex].outcome = 'done';
       this.saveTaskHistory('done');
       this.completeTaskAndCloseDecision();
+      this.openCelebration(completedTitle);
       return;
     }
     this.taskDecisionNeedsJustification = true;
+  }
+
+  closeCelebrationModal(): void {
+    this.celebrationOpen = false;
+    this.celebrationTaskTitle = '';
   }
 
   respondTaskJustification(justified: boolean): void {
@@ -691,6 +700,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
       gain.connect(audioContext.destination);
       osc.start();
       osc.stop(audioContext.currentTime + 0.28);
+    } catch {
+      // Ignore if audio cannot be played in this browser context.
+    }
+  }
+
+  private openCelebration(taskTitle: string): void {
+    this.celebrationTaskTitle = taskTitle;
+    this.celebrationOpen = true;
+    this.playCelebrationSound();
+  }
+
+  private playCelebrationSound(): void {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const gain = audioContext.createGain();
+      gain.gain.value = 0.035;
+      gain.connect(audioContext.destination);
+
+      const notes = [659.25, 783.99, 987.77];
+      notes.forEach((freq, index) => {
+        const osc = audioContext.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        const start = audioContext.currentTime + (index * 0.09);
+        osc.start(start);
+        osc.stop(start + 0.12);
+      });
     } catch {
       // Ignore if audio cannot be played in this browser context.
     }

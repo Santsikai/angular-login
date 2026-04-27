@@ -52,10 +52,10 @@
 .board-select {
   min-width: 160px;
   max-width: 220px;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid #93c5fd;
   border-radius: 10px;
-  background: #fff;
-  color: #1e293b;
+  background: rgba(219, 234, 254, 0.78);
+  color: #1e3a8a;
   padding: 0.45rem 0.6rem;
   font-size: 0.84rem;
   font-weight: 600;
@@ -64,44 +64,50 @@
 .btn-board-add {
   width: 32px;
   height: 32px;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid #93c5fd;
   border-radius: 10px;
-  background: #fff;
-  color: #334155;
+  background: rgba(219, 234, 254, 0.78);
+  color: #1e3a8a;
   font-weight: 700;
   cursor: pointer;
 
   &:hover {
-    border-color: #22c55e;
-    color: #166534;
-    background: #f0fdf4;
+    border-color: #60a5fa;
+    color: #1d4ed8;
+    background: #dbeafe;
   }
 }
 
 .btn-board-delete {
   width: 32px;
   height: 32px;
-  border: 1.5px solid #fecaca;
+  border: 1.5px solid #93c5fd;
   border-radius: 10px;
-  background: #fff;
-  color: #b91c1c;
+  background: rgba(219, 234, 254, 0.78);
+  color: #1e3a8a;
   font-weight: 700;
   cursor: pointer;
 
   &:hover {
     border-color: #f87171;
+    color: #b91c1c;
     background: #fef2f2;
   }
 }
 
 .btn-back {
   border: 1.5px solid #93c5fd;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(219, 234, 254, 0.78);
   color: #1e3a8a;
   padding: 0.45rem 0.8rem;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+
+  &:hover {
+    border-color: #60a5fa;
+    background: #dbeafe;
+  }
 }
 
 @media (max-width: 620px) {

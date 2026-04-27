@@ -248,6 +248,15 @@
         </div>
       </div>
 
+      <div class="celebration-backdrop" *ngIf="celebrationOpen" (click)="closeCelebrationModal()">
+        <div class="celebration-modal" (click)="$event.stopPropagation()">
+          <div class="celebration-icon">🎉</div>
+          <h4>Felicidades</h4>
+          <p>Has completado la tarea <strong>{{ celebrationTaskTitle }}</strong>.</p>
+          <button class="celebration-btn" (click)="closeCelebrationModal()">Genial</button>
+        </div>
+      </div>
+
     </div>
   </main>
 

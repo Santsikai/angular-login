@@ -324,7 +324,7 @@ $long-color:   #f59e0b;
   height: 30px;
   border: 1.5px solid #fecaca;
   border-radius: 8px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.72);
   color: #b91c1c;
   font-weight: 700;
   cursor: pointer;
@@ -338,7 +338,7 @@ $long-color:   #f59e0b;
 .btn-tasks {
   display: flex; align-items: center; gap: 0.4rem;
   padding: 0.5rem 0.9rem;
-  background: transparent; border: 1.5px solid #93c5fd;
+  background: rgba(255, 255, 255, 0.72); border: 1.5px solid #93c5fd;
   border-radius: 8px; font-size: 0.875rem; font-weight: 500;
   color: #1e3a8a; cursor: pointer; transition: all 0.2s;
   position: relative;
@@ -361,7 +361,7 @@ $long-color:   #f59e0b;
 .btn-history {
   display: flex; align-items: center; gap: 0.4rem;
   padding: 0.5rem 0.9rem;
-  background: transparent; border: 1.5px solid #93c5fd;
+  background: rgba(255, 255, 255, 0.72); border: 1.5px solid #93c5fd;
   border-radius: 8px; font-size: 0.875rem; font-weight: 500;
   color: #1e3a8a; cursor: pointer; transition: all 0.2s;
 
@@ -377,7 +377,7 @@ $long-color:   #f59e0b;
 .btn-logout {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: transparent; border: 1.5px solid #93c5fd;
+  background: rgba(255, 255, 255, 0.72); border: 1.5px solid #93c5fd;
   border-radius: 8px; font-size: 0.875rem; font-weight: 500;
   color: #1e3a8a; cursor: pointer; transition: all 0.2s;
   svg { width: 16px; height: 16px; }
@@ -756,6 +756,64 @@ $long-color:   #f59e0b;
   &.pause { background: #2563eb; }
   &.warn { background: #d97706; }
   &.no { background: #dc2626; }
+}
+
+.celebration-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 95;
+}
+
+.celebration-modal {
+  width: min(92vw, 360px);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.96) 0%, #ffffff 100%);
+  border: 1px solid rgba(147, 197, 253, 0.6);
+  box-shadow: 0 24px 48px rgba(30, 64, 175, 0.28);
+  padding: 1.15rem 1.1rem 1rem;
+  text-align: center;
+
+  h4 {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    color: #1e3a8a;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #1e40af;
+  }
+}
+
+.celebration-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.2rem;
+}
+
+.celebration-btn {
+  margin-top: 0.85rem;
+  border: 1px solid #4f46e5;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.16s, opacity 0.2s;
+
+  &:hover {
+    opacity: 0.94;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
 }
 
 @media (max-width: 620px) {
