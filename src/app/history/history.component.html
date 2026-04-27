@@ -1,0 +1,80 @@
+<div class="history-page">
+  <header class="history-header">
+    <div class="history-header-content">
+      <div class="history-topbar">
+        <button class="btn-back" (click)="goBackToPomodoro()">Volver al pomodoro</button>
+        <h1 class="history-title">Historial semanal</h1>
+        <div class="board-controls">
+          <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event)">
+            <option *ngFor="let board of boards" [ngValue]="board.id">{{ board.name }}</option>
+          </select>
+          <button class="btn-board-add" (click)="createBoard()" title="Crear board">+</button>
+          <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board">-</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="history-main">
+    <section class="week-controls">
+      <div class="week-nav-actions">
+        <button class="btn-nav" (click)="previousWeek()">Semana anterior</button>
+        <button class="btn-nav current" (click)="goToCurrentWeek()">Esta semana</button>
+        <button class="btn-nav" (click)="nextWeek()">Semana siguiente</button>
+      </div>
+      <div class="week-search">
+        <label for="weekDate">Buscar por fecha</label>
+        <input
+          id="weekDate"
+          type="date"
+          [ngModel]="calendarDate"
+          (ngModelChange)="onCalendarDateChange($event)"
+        >
+        <span class="week-range">Semana: {{ weekRangeLabel }}</span>
+      </div>
+    </section>
+
+    <section class="week-summary">
+      <div class="summary-card">
+        <span>Total semanal</span>
+        <strong>{{ formatDuration(weeklyTotalSeconds) }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Tareas registradas</span>
+        <strong>{{ weeklyTaskCount }}</strong>
+      </div>
+    </section>
+
+    <section class="week-grid">
+      <button
+        class="day-card"
+        *ngFor="let day of weekDays"
+        [class.today]="day.isToday"
+        [class.selected]="day.key === selectedDateKey"
+        (click)="selectDay(day.key)"
+      >
+        <span class="day-label">{{ day.label }}</span>
+        <strong>{{ formatDuration(day.totalSeconds) }}</strong>
+        <small>{{ day.entries.length }} tareas</small>
+      </button>
+    </section>
+
+    <section class="day-details" *ngIf="selectedDay as day">
+      <h2>{{ day.date | date:'EEEE d MMMM':'':'es-ES' }}</h2>
+
+      <div class="empty-state" *ngIf="day.entries.length === 0">
+        No hay tareas registradas este dia.
+      </div>
+
+      <div class="entry-list" *ngIf="day.entries.length > 0">
+        <article class="entry-item" *ngFor="let entry of day.entries">
+          <div class="entry-main">
+            <h3>{{ entry.title }}</h3>
+            <p>{{ formatDuration(entry.workedSeconds) }} de {{ entry.plannedMinutes }} min planificados</p>
+          </div>
+          <span class="entry-outcome" [ngClass]="entry.outcome">{{ labelOutcome(entry.outcome) }}</span>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>

@@ -1,0 +1,277 @@
+<div class="dashboard-wrapper" [ngClass]="mode">
+  <!-- Tasks drawer -->
+  <div class="tasks-drawer-backdrop" *ngIf="showTasks" (click)="showTasks = false"></div>
+  <aside class="tasks-drawer" [class.open]="showTasks">
+    <div class="drawer-header">
+      <h3>Tareas del dia</h3>
+      <button class="drawer-close" (click)="showTasks = false">&#x2715;</button>
+    </div>
+
+    <div class="task-form">
+      <input
+        type="text"
+        placeholder="Nombre de la tarea"
+        [(ngModel)]="draftTaskTitle"
+        (keyup.enter)="addTask()"
+      >
+      <div class="task-form-row">
+        <input
+          class="hours-input"
+          type="number"
+          min="0"
+          max="12"
+          [(ngModel)]="draftTaskHours"
+          (change)="clampDraftTaskDuration()"
+          placeholder="h"
+        >
+        <input
+          class="minutes-input"
+          type="number"
+          min="0"
+          max="59"
+          [(ngModel)]="draftTaskMinutes"
+          (change)="clampDraftTaskDuration()"
+          placeholder="min"
+        >
+        <button class="btn-add-task" (click)="addTask()">Añadir</button>
+      </div>
+    </div>
+
+    <div class="task-list" *ngIf="tasks.length > 0; else noTasks">
+      <div class="task-row" [ngClass]="task.outcome" *ngFor="let task of tasks; let i = index">
+        <span class="task-name">{{ i + 1 }}. {{ task.title }}</span>
+        <button
+          class="btn-pick-task"
+          (click)="selectTaskNow(i)"
+          [disabled]="!canSelectTask(i)"
+          title="Hacer ahora"
+        >
+          Hacer ahora
+        </button>
+        <span class="task-meta">
+          {{ taskDurationLabel(task) }}
+          <span *ngIf="task.outcome === 'done'"> · terminada</span>
+          <span *ngIf="task.outcome === 'justified'"> · no terminada (justificada)</span>
+          <span *ngIf="task.outcome === 'not-justified'"> · no terminada</span>
+          <span *ngIf="task.outcome === 'paused'"> · pausada</span>
+        </span>
+        <button class="btn-remove-task" (click)="removeTask(i)" title="Eliminar">&#x2715;</button>
+      </div>
+    </div>
+    <ng-template #noTasks>
+      <p class="task-empty">Todavia no hay tareas.</p>
+    </ng-template>
+
+    <div class="drawer-finish-early">
+      <button
+        class="btn-finish-early"
+        (click)="finishCurrentTaskEarly()"
+        [disabled]="currentTaskIndex < 0 || totalProgressPercent >= 100 || mode !== 'focus'"
+      >
+        Terminar tarea
+      </button>
+      <button
+        class="btn-finish-early pause"
+        (click)="pauseCurrentTaskEarly()"
+        [disabled]="currentTaskIndex < 0 || totalProgressPercent >= 100 || mode !== 'focus'"
+      >
+        Pausar tarea
+      </button>
+    </div>
+  </aside>
+
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Pomodoro Pond</span>
+      </div>
+      <div class="header-actions">
+      <div class="board-controls">
+        <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event)">
+          <option *ngFor="let board of boards" [ngValue]="board.id">{{ board.name }}</option>
+        </select>
+        <button class="btn-board-add" (click)="createBoard()" title="Crear board">+</button>
+        <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board">-</button>
+      </div>
+      <button class="btn-tasks" (click)="showTasks = !showTasks" [class.active]="showTasks">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Tareas
+        <span class="task-count" *ngIf="tasks.length > 0">{{ tasks.length }}</span>
+      </button>
+      <button class="btn-history" (click)="goToHistory()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7 3v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M17 3v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <rect x="3" y="6" width="18" height="15" rx="2" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 12h3M8 16h3M14 12h3M14 16h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Historial
+      </button>
+      <button class="btn-logout" (click)="logout()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Cerrar sesión
+      </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <div class="pomodoro-card" [ngClass]="mode">
+
+      <!-- Mode tabs (solo indicador, sin cambio manual) -->
+      <div class="mode-tabs">
+        <span [class.active]="mode === 'focus'">Enfoque</span>
+        <span [class.active]="mode === 'short'">Descanso corto</span>
+        <span [class.active]="mode === 'long'">Descanso largo</span>
+      </div>
+
+      <!-- Circular timer -->
+      <div class="timer-ring-wrapper">
+        <svg class="timer-ring" viewBox="0 0 220 220">
+          <circle class="ring-bg" cx="110" cy="110" r="96"/>
+          <circle
+            class="ring-progress"
+            cx="110" cy="110" r="96"
+            [style.stroke-dashoffset]="dashOffset"
+          />
+        </svg>
+        <div class="timer-display">
+          <span class="timer-time">{{ timeDisplay }}</span>
+          <span class="timer-label">{{ modeLabel }}</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="timer-controls">
+        <button class="btn-reset" (click)="reset()" title="Reiniciar" [disabled]="!canRunPomodoro && !running">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 3v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="btn-primary" (click)="toggleTimer()" [disabled]="!canRunPomodoro && !running">
+          <span *ngIf="!running">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Iniciar
+          </span>
+          <span *ngIf="running">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+            </svg>
+            Pausar
+          </span>
+        </button>
+        <button class="btn-skip" (click)="skip()" title="Saltar" [disabled]="!canRunPomodoro && !running">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="5 4 15 12 5 20 5 4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <line x1="19" y1="4" x2="19" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="btn-restart-pomodoro" (click)="restartPomodoro()" title="Reiniciar pomodoro">Reiniciar pomodoro</button>
+      </div>
+
+      <p class="timer-hint" *ngIf="!canRunPomodoro">Añade al menos una tarea pendiente para iniciar el pomodoro.</p>
+
+      <!-- Pomodoro counter -->
+      <div class="pomodoro-counter">
+        <span *ngFor="let p of pomodoroSlots; let i = index"
+              class="pomodoro-dot"
+              [class.filled]="i < completedPomodoros % 4">
+        </span>
+        <span class="total-label">Ronda {{ round }}</span>
+      </div>
+
+      <!-- Settings toggle -->
+      <button class="btn-settings" (click)="showSettings = !showSettings" [class.active]="showSettings" title="Ajustes">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Ajustes
+      </button>
+
+      <!-- Settings panel -->
+      <div class="settings-panel" *ngIf="showSettings">
+        <h4>Duración (minutos)</h4>
+        <div class="settings-row">
+          <label>Enfoque</label>
+          <input type="number" min="1" max="90" [(ngModel)]="draftMinutes.focus" (change)="clampDraft('focus')">
+        </div>
+        <div class="settings-row">
+          <label>Descanso corto</label>
+          <input type="number" min="1" max="60" [(ngModel)]="draftMinutes.short" (change)="clampDraft('short')">
+        </div>
+        <div class="settings-row">
+          <label>Descanso largo</label>
+          <input type="number" min="1" max="60" [(ngModel)]="draftMinutes.long" (change)="clampDraft('long')">
+        </div>
+        <button class="btn-apply" (click)="applySettings()">Aplicar</button>
+      </div>
+
+      <div class="task-alarm-backdrop" *ngIf="taskDecisionOpen">
+        <div class="task-alarm">
+          <button class="btn-alarm-close" *ngIf="taskDecisionManual" (click)="closeTaskDecisionModal()" title="Cerrar">x</button>
+          <h4>Alarma de tarea</h4>
+          <p *ngIf="!taskDecisionNeedsJustification">
+            {{ taskDecisionManual ? 'Has marcado fin anticipado para' : 'Se acabo el tiempo para' }}
+            <strong>{{ taskDecisionTitle }}</strong>.
+          </p>
+          <p *ngIf="!taskDecisionNeedsJustification">La has terminado?</p>
+
+          <div class="alarm-actions" *ngIf="!taskDecisionNeedsJustification">
+            <button class="alarm-btn yes" (click)="respondTaskFinished(true)">Si, terminada</button>
+            <button class="alarm-btn pause" (click)="pauseCurrentTask()">Pausar tarea</button>
+            <button class="alarm-btn no" (click)="respondTaskFinished(false)">No, no la termine</button>
+          </div>
+
+          <div *ngIf="taskDecisionNeedsJustification">
+            <p>Si no la has terminado, esta justificado?</p>
+            <div class="alarm-actions">
+              <button class="alarm-btn warn" (click)="respondTaskJustification(true)">Si, justificado</button>
+              <button class="alarm-btn no" (click)="respondTaskJustification(false)">No, no justificado</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <section class="progress-dock" *ngIf="tasks.length > 0">
+    <div class="progress-bars">
+      <div class="progress-group">
+        <div class="progress-head">
+          <span>{{ currentTaskTitle }}</span>
+          <span>{{ currentTaskProgressPercent | number:'1.0-0' }}% · {{ currentTaskProgressLabel }}</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="currentTaskProgressPercent"></div>
+        </div>
+      </div>
+      <div class="progress-group">
+        <div class="progress-head">
+          <span>Total tareas</span>
+          <span>{{ totalProgressPercent | number:'1.0-0' }}% · {{ totalProgressLabel }}</span>
+        </div>
+        <div class="progress-track total">
+          <div class="progress-fill" [style.width.%]="totalProgressPercent"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
