@@ -34,7 +34,6 @@ export class HistoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadBoards();
-    this.loadHistory();
   }
 
   get selectedBoardName(): string {
@@ -84,10 +83,12 @@ export class HistoryComponent implements OnInit {
     if (!name) {
       return;
     }
-    const board = this.boardService.createBoard(name);
-    this.boards = this.boardService.getBoards();
-    this.selectedBoardId = board.id;
-    this.loadHistory();
+    this.boardService.createBoard(name).subscribe(board => {
+      this.boards = [...this.boards, board];
+      this.selectedBoardId = board.id;
+      this.boardService.setActiveBoardId(board.id);
+      this.loadHistory();
+    });
   }
 
   deleteCurrentBoard(): void {
@@ -106,14 +107,13 @@ export class HistoryComponent implements OnInit {
     this.historyService.deleteEntriesForBoard(removedBoardId);
     this.removeSavedStateForBoard(removedBoardId);
 
-    const result = this.boardService.deleteBoard(removedBoardId);
-    if (!result.deleted) {
-      return;
-    }
-
-    this.boards = this.boardService.getBoards();
-    this.selectedBoardId = result.nextActiveBoardId;
-    this.loadHistory();
+    this.boardService.deleteBoard(removedBoardId).subscribe(() => {
+      this.boards = this.boards.filter(b => b.id !== removedBoardId);
+      const nextId = this.boards[0]?.id || '';
+      this.selectedBoardId = nextId;
+      this.boardService.setActiveBoardId(nextId);
+      this.loadHistory();
+    });
   }
 
   previousWeek(): void {
@@ -180,13 +180,33 @@ export class HistoryComponent implements OnInit {
   }
 
   private loadHistory(): void {
-    this.allEntries = this.historyService.getEntriesForBoard(this.selectedBoardId);
-    this.buildWeekDays();
+    if (!this.selectedBoardId) {
+      return;
+    }
+    this.historyService.getEntriesForBoard(this.selectedBoardId).subscribe(entries => {
+      this.allEntries = entries;
+      this.buildWeekDays();
+    });
   }
 
   private loadBoards(): void {
-    this.boards = this.boardService.getBoards();
-    this.selectedBoardId = this.boardService.getActiveBoardId();
+    const savedActive = this.boardService.getActiveBoardId();
+    this.boardService.getBoards().subscribe(boards => {
+      if (boards.length === 0) {
+        this.boardService.createBoard('Board principal').subscribe(board => {
+          this.boards = [board];
+          this.selectedBoardId = board.id;
+          this.boardService.setActiveBoardId(board.id);
+          this.loadHistory();
+        });
+        return;
+      }
+      this.boards = boards;
+      const active = boards.find(b => b.id === savedActive);
+      this.selectedBoardId = active ? active.id : boards[0].id;
+      this.boardService.setActiveBoardId(this.selectedBoardId);
+      this.loadHistory();
+    });
   }
 
   private buildWeekDays(): void {

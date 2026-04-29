@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 export const DEFAULT_BOARD_ID = 'board-default';
 export const DASHBOARD_STATE_KEY_PREFIX = 'pomodoro-pond-dashboard-state-v1';
@@ -9,105 +11,32 @@ export interface PomodoroBoard {
   createdAt: string;
 }
 
+const API_BASE = 'http://localhost:3001/api';
+const USER_ID = 1;
+const ACTIVE_BOARD_KEY = 'pomodoro-pond-active-board-v1';
+
 @Injectable({ providedIn: 'root' })
 export class BoardService {
-  private readonly boardsKey = 'pomodoro-pond-boards-v1';
-  private readonly activeBoardKey = 'pomodoro-pond-active-board-v1';
+  constructor(private http: HttpClient) {}
 
-  getBoards(): PomodoroBoard[] {
-    const boards = this.readBoards();
-    if (boards.length === 0) {
-      const fallback: PomodoroBoard = {
-        id: DEFAULT_BOARD_ID,
-        name: 'Board principal',
-        createdAt: new Date().toISOString()
-      };
-      this.writeBoards([fallback]);
-      this.setActiveBoardId(fallback.id);
-      return [fallback];
-    }
-    return boards;
+  getBoards(): Observable<PomodoroBoard[]> {
+    return this.http.get<PomodoroBoard[]>(`${API_BASE}/boards?userId=${USER_ID}`);
   }
 
   getActiveBoardId(): string {
-    const active = localStorage.getItem(this.activeBoardKey);
-    const boards = this.getBoards();
-    if (active && boards.some(board => board.id === active)) {
-      return active;
-    }
-    const first = boards[0].id;
-    this.setActiveBoardId(first);
-    return first;
+    return localStorage.getItem(ACTIVE_BOARD_KEY) || '';
   }
 
   setActiveBoardId(boardId: string): void {
-    localStorage.setItem(this.activeBoardKey, boardId);
+    localStorage.setItem(ACTIVE_BOARD_KEY, boardId);
   }
 
-  createBoard(name: string): PomodoroBoard {
+  createBoard(name: string): Observable<PomodoroBoard> {
     const cleanName = name.trim().slice(0, 40) || 'Nuevo board';
-    const board: PomodoroBoard = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: cleanName,
-      createdAt: new Date().toISOString()
-    };
-
-    const boards = this.getBoards();
-    boards.push(board);
-    this.writeBoards(boards);
-    this.setActiveBoardId(board.id);
-    return board;
+    return this.http.post<PomodoroBoard>(`${API_BASE}/boards`, { userId: USER_ID, name: cleanName });
   }
 
-  getBoardName(boardId: string): string {
-    const board = this.getBoards().find(item => item.id === boardId);
-    return board ? board.name : 'Board';
-  }
-
-  deleteBoard(boardId: string): { deleted: boolean; nextActiveBoardId: string } {
-    const boards = this.getBoards();
-    if (boards.length <= 1) {
-      return { deleted: false, nextActiveBoardId: this.getActiveBoardId() };
-    }
-
-    const exists = boards.some(board => board.id === boardId);
-    if (!exists) {
-      return { deleted: false, nextActiveBoardId: this.getActiveBoardId() };
-    }
-
-    const remaining = boards.filter(board => board.id !== boardId);
-    this.writeBoards(remaining);
-
-    const currentActive = this.getActiveBoardId();
-    const nextActiveBoardId = currentActive === boardId
-      ? remaining[0].id
-      : currentActive;
-
-    this.setActiveBoardId(nextActiveBoardId);
-    return { deleted: true, nextActiveBoardId };
-  }
-
-  private readBoards(): PomodoroBoard[] {
-    try {
-      const raw = localStorage.getItem(this.boardsKey);
-      if (!raw) {
-        return [];
-      }
-      const parsed = JSON.parse(raw) as PomodoroBoard[];
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-      return parsed.filter(board =>
-        typeof board?.id === 'string' &&
-        typeof board?.name === 'string' &&
-        typeof board?.createdAt === 'string'
-      );
-    } catch {
-      return [];
-    }
-  }
-
-  private writeBoards(boards: PomodoroBoard[]): void {
-    localStorage.setItem(this.boardsKey, JSON.stringify(boards));
+  deleteBoard(boardId: string): Observable<{ deleted: boolean }> {
+    return this.http.delete<{ deleted: boolean }>(`${API_BASE}/boards/${boardId}`);
   }
 }

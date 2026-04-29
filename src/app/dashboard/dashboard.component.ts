@@ -78,7 +78,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadBoards();
-    this.restoreState();
   }
 
   get selectedBoardName(): string {
@@ -441,9 +440,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!name) {
       return;
     }
-    const board = this.boardService.createBoard(name);
-    this.boards = this.boardService.getBoards();
-    this.onBoardChanged(board.id);
+    this.boardService.createBoard(name).subscribe(board => {
+      this.boards = [...this.boards, board];
+      this.boardService.setActiveBoardId(board.id);
+      this.onBoardChanged(board.id);
+    });
   }
 
   deleteCurrentBoard(): void {
@@ -463,15 +464,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.taskHistoryService.deleteEntriesForBoard(removedBoardId);
     this.removeSavedStateForBoard(removedBoardId);
 
-    const result = this.boardService.deleteBoard(removedBoardId);
-    if (!result.deleted) {
-      return;
-    }
-
-    this.boards = this.boardService.getBoards();
-    this.selectedBoardId = result.nextActiveBoardId;
-    this.resetBoardRuntime();
-    this.restoreState();
+    this.boardService.deleteBoard(removedBoardId).subscribe(() => {
+      this.boards = this.boards.filter(b => b.id !== removedBoardId);
+      const nextId = this.boards[0]?.id || '';
+      this.selectedBoardId = nextId;
+      this.boardService.setActiveBoardId(nextId);
+      this.resetBoardRuntime();
+      this.restoreState();
+    });
   }
 
   ngOnDestroy(): void {
@@ -838,8 +838,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadBoards(): void {
-    this.boards = this.boardService.getBoards();
-    this.selectedBoardId = this.boardService.getActiveBoardId();
+    const savedActive = this.boardService.getActiveBoardId();
+    this.boardService.getBoards().subscribe(boards => {
+      if (boards.length === 0) {
+        this.boardService.createBoard('Board principal').subscribe(board => {
+          this.boards = [board];
+          this.selectedBoardId = board.id;
+          this.boardService.setActiveBoardId(board.id);
+          this.restoreState();
+        });
+        return;
+      }
+      this.boards = boards;
+      const active = boards.find(b => b.id === savedActive);
+      this.selectedBoardId = active ? active.id : boards[0].id;
+      this.boardService.setActiveBoardId(this.selectedBoardId);
+      this.restoreState();
+    });
   }
 
   private getStateStorageKey(): string {
