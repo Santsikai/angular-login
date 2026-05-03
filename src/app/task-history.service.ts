@@ -22,7 +22,9 @@ interface CreateTaskHistoryEntry {
   outcome: TaskHistoryOutcome;
 }
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = globalThis.location?.hostname === 'localhost'
+  ? 'http://localhost:3001/api'
+  : '/api';
 
 @Injectable({ providedIn: 'root' })
 export class TaskHistoryService {

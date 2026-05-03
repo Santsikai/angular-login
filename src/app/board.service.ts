@@ -11,7 +11,9 @@ export interface PomodoroBoard {
   createdAt: string;
 }
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = globalThis.location?.hostname === 'localhost'
+  ? 'http://localhost:3001/api'
+  : '/api';
 const USER_ID = 1;
 const ACTIVE_BOARD_KEY = 'pomodoro-pond-active-board-v1';
 
