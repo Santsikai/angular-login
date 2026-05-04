@@ -33,7 +33,20 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Backend running on http://localhost:${PORT}`);
+async function runMigrations() {
+  try {
+    await pool.query(
+      `ALTER TABLE boards
+       ADD COLUMN IF NOT EXISTS pomodoro_state JSON NULL`
+    );
+  } catch {
+    // Column may already exist or DB does not support IF NOT EXISTS – ignore.
+  }
+}
+
+runMigrations().then(() => {
+  app.listen(PORT, () => {
+    // eslint-disable-next-line no-console
+    console.log(`Backend running on http://localhost:${PORT}`);
+  });
 });

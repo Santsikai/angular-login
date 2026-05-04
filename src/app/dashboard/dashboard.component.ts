@@ -471,6 +471,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.stop();
     this.secondsLeft = this.durations[this.mode];
     this.showSettings = false;
+    this.saveBoardSettings();
   }
 
   toggleTimer(): void {
@@ -518,7 +519,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.selectedBoardId = boardId;
     this.boardService.setActiveBoardId(boardId);
     this.resetBoardRuntime();
+    const targetBoard = this.boards.find(b => b.id === boardId);
     this.restoreState();
+    this.applyBoardSettings(targetBoard?.pomodoroState);
   }
 
   createBoard(): void {
@@ -888,12 +891,42 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Saves only the pomodoro durations (settings) to the backend for this board.
+  private saveBoardSettings(): void {
+    if (!this.selectedBoardId) { return; }
+    const settings = { durations: this.durations, draftMinutes: this.draftMinutes };
+    this.boardService.savePomodoroState(this.selectedBoardId, settings).subscribe({
+      next: () => {
+        const board = this.boards.find(b => b.id === this.selectedBoardId);
+        if (board) { board.pomodoroState = settings; }
+      },
+      error: () => { /* ignore – settings still applied locally */ }
+    });
+  }
+
+  // Applies only durations/draftMinutes from a backend-stored settings object.
+  private applyBoardSettings(state: any): void {
+    if (!state || typeof state !== 'object') { return; }
+    if (state.durations?.focus && state.durations?.short && state.durations?.long) {
+      this.durations = {
+        focus: Math.max(60, Math.floor(state.durations.focus)),
+        short: Math.max(60, Math.floor(state.durations.short)),
+        long: Math.max(60, Math.floor(state.durations.long))
+      };
+    }
+    if (state.draftMinutes?.focus && state.draftMinutes?.short && state.draftMinutes?.long) {
+      this.draftMinutes = {
+        focus: Math.max(1, Math.floor(state.draftMinutes.focus)),
+        short: Math.max(1, Math.floor(state.draftMinutes.short)),
+        long: Math.max(1, Math.floor(state.draftMinutes.long))
+      };
+    }
+  }
+
   private restoreState(): void {
     try {
       const raw = localStorage.getItem(this.getStateStorageKey());
-      if (!raw) {
-        return;
-      }
+      if (!raw) { return; }
       const state = JSON.parse(raw) as Partial<DashboardPersistedState>;
       if (!state || typeof state !== 'object') {
         return;
@@ -984,9 +1017,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
       this.boards = boards;
       const active = boards.find(b => b.id === savedActive);
-      this.selectedBoardId = active ? active.id : boards[0].id;
+      const activeBoard = active || boards[0];
+      this.selectedBoardId = activeBoard.id;
       this.boardService.setActiveBoardId(this.selectedBoardId);
       this.restoreState();
+      this.applyBoardSettings(activeBoard.pomodoroState);
     });
   }
 

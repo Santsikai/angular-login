@@ -7,7 +7,7 @@ router.get('/', async (req, res, next) => {
   try {
     const userId = Number(req.query.userId || 1);
     const [rows] = await pool.query(
-      `SELECT id, name, created_at AS createdAt
+      `SELECT id, name, created_at AS createdAt, pomodoro_state AS pomodoroState
        FROM boards
        WHERE user_id = ?
        ORDER BY created_at ASC`,
@@ -74,6 +74,28 @@ router.put('/:boardId', async (req, res, next) => {
     );
 
     res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch('/:boardId/state', async (req, res, next) => {
+  try {
+    const boardId = String(req.params.boardId);
+    const state = req.body.state !== undefined ? req.body.state : null;
+    const stateJson = state !== null ? JSON.stringify(state) : null;
+
+    const [result] = await pool.query(
+      `UPDATE boards SET pomodoro_state = ? WHERE id = ?`,
+      [stateJson, boardId]
+    );
+
+    if (result.affectedRows === 0) {
+      res.status(404).json({ message: 'Board no encontrado' });
+      return;
+    }
+
+    res.json({ saved: true });
   } catch (error) {
     next(error);
   }

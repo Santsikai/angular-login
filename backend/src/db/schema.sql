@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS boards (
   id VARCHAR(64) NOT NULL,
   user_id BIGINT UNSIGNED NOT NULL,
   name VARCHAR(120) NOT NULL,
+  pomodoro_state JSON NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_boards_user (user_id),

@@ -9,6 +9,7 @@ export interface PomodoroBoard {
   id: string;
   name: string;
   createdAt: string;
+  pomodoroState?: any;
 }
 
 const API_BASE = globalThis.location?.hostname === 'localhost'
@@ -45,5 +46,9 @@ export class BoardService {
 
   deleteBoard(boardId: string): Observable<{ deleted: boolean }> {
     return this.http.delete<{ deleted: boolean }>(`${API_BASE}/boards/${boardId}`);
+  }
+
+  savePomodoroState(boardId: string, state: any): Observable<{ saved: boolean }> {
+    return this.http.patch<{ saved: boolean }>(`${API_BASE}/boards/${boardId}/state`, { state });
   }
 }
