@@ -7,11 +7,15 @@ export class AuthService {
 
   private readonly TOKEN_KEY = 'auth_token';
 
-  // Demo credentials — replace with real API call in production
-  private readonly VALID_USER = { username: 'admin', password: 'admin123' };
+  // Local fallback users until backend auth endpoint is wired.
+  private readonly VALID_USERS = [
+    { username: 'admin', password: 'admin123' },
+    { username: 'uriwuwu', password: 'leire3838' }
+  ];
 
   login(username: string, password: string): boolean {
-    if (username === this.VALID_USER.username && password === this.VALID_USER.password) {
+    const user = this.VALID_USERS.find(item => item.username === username && item.password === password);
+    if (user) {
       localStorage.setItem(this.TOKEN_KEY, btoa(`${username}:${Date.now()}`));
       sessionStorage.removeItem(this.TOKEN_KEY);
       return true;
