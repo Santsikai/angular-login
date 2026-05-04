@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TaskHistoryEntry, TaskHistoryService } from '../task-history.service';
 import { BoardService, DASHBOARD_STATE_KEY_PREFIX, PomodoroBoard } from '../board.service';
@@ -20,6 +20,7 @@ interface DayCard {
 export class HistoryComponent implements OnInit {
   boards: PomodoroBoard[] = [];
   selectedBoardId = '';
+  mobileMenuOpen = false;
   showCreateBoardModal = false;
   draftBoardName = '';
   showEditBoardModal = false;
@@ -38,6 +39,21 @@ export class HistoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadBoards();
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen = false;
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (window.innerWidth > 620 && this.mobileMenuOpen) {
+      this.mobileMenuOpen = false;
+    }
   }
 
   get selectedBoardName(): string {
@@ -66,6 +82,7 @@ export class HistoryComponent implements OnInit {
   }
 
   goBackToPomodoro(): void {
+    this.closeMobileMenu();
     this.router.navigate(['/dashboard']);
   }
 
@@ -74,11 +91,13 @@ export class HistoryComponent implements OnInit {
       return;
     }
     this.selectedBoardId = boardId;
+    this.closeMobileMenu();
     this.boardService.setActiveBoardId(boardId);
     this.loadHistory();
   }
 
   createBoard(): void {
+    this.closeMobileMenu();
     this.draftBoardName = '';
     this.showCreateBoardModal = true;
   }
@@ -106,6 +125,7 @@ export class HistoryComponent implements OnInit {
     if (!this.selectedBoardId) {
       return;
     }
+    this.closeMobileMenu();
     this.draftEditBoardName = this.selectedBoardName;
     this.showEditBoardModal = true;
   }
@@ -133,6 +153,7 @@ export class HistoryComponent implements OnInit {
       window.alert('No puedes borrar el unico board.');
       return;
     }
+    this.closeMobileMenu();
 
     const name = this.selectedBoardName;
     const confirmed = window.confirm(`Borrar board \"${name}\"? Se eliminaran sus tareas e historial.`);

@@ -2,41 +2,56 @@
   <header class="history-header">
     <div class="history-header-content">
       <div class="history-topbar">
-        <button class="btn-back" (click)="goBackToPomodoro()">Volver al pomodoro</button>
         <h1 class="history-title">Historial semanal</h1>
-        <div class="board-controls">
-          <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event)">
+        <button
+          class="btn-mobile-menu"
+          [class.open]="mobileMenuOpen"
+          type="button"
+          (click)="toggleMobileMenu()"
+          [attr.aria-expanded]="mobileMenuOpen"
+          [attr.aria-label]="mobileMenuOpen ? 'Cerrar menu' : 'Abrir menu'"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="history-actions" [class.mobile-open]="mobileMenuOpen">
+          <button class="btn-back" (click)="goBackToPomodoro()">Volver al pomodoro</button>
+          <div class="board-controls">
+            <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event)">
             <option *ngFor="let board of boards" [ngValue]="board.id">{{ board.name }}</option>
-          </select>
-          <button class="btn-board-add" (click)="createBoard()" title="Crear board" aria-label="Crear board" type="button">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <button class="btn-board-edit" (click)="beginEditBoard()" title="Editar board" aria-label="Editar board" type="button">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 20h4l9.5-9.5a1.4 1.4 0 0 0 0-2L15.5 6a1.4 1.4 0 0 0-2 0L4 15.5V20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-              <path d="M12 7.5l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board" aria-label="Borrar board" type="button">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-          </button>
+            </select>
+            <button class="btn-board-add" (click)="createBoard()" title="Crear board" aria-label="Crear board" type="button">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="btn-board-edit" (click)="beginEditBoard()" title="Editar board" aria-label="Editar board" type="button">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 20h4l9.5-9.5a1.4 1.4 0 0 0 0-2L15.5 6a1.4 1.4 0 0 0-2 0L4 15.5V20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M12 7.5l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board" aria-label="Borrar board" type="button">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </header>
+  <div class="mobile-menu-backdrop" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
 
   <main class="history-main">
     <section class="week-controls">
       <div class="week-nav-actions">
-        <button class="btn-nav" (click)="previousWeek()">Semana anterior</button>
-        <button class="btn-nav current" (click)="goToCurrentWeek()">Esta semana</button>
-        <button class="btn-nav" (click)="nextWeek()">Semana siguiente</button>
+        <button class="btn-nav" (click)="previousWeek()">Anterior</button>
+        <button class="btn-nav current" (click)="goToCurrentWeek()">Actual</button>
+        <button class="btn-nav" (click)="nextWeek()">Siguiente</button>
       </div>
       <div class="week-search">
         <label for="weekDate">Buscar por fecha</label>

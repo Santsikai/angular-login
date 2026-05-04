@@ -47,6 +47,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   pomodoroSlots = [0, 1, 2, 3];
   showSettings = false;
   showTasks = false;
+  mobileMenuOpen = false;
 
   durations: Record<PomodoroMode, number> = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 };
   draftMinutes: Record<PomodoroMode, number> = { focus: 25, short: 5, long: 15 };
@@ -88,6 +89,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadBoards();
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen = false;
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (window.innerWidth > 900 && this.mobileMenuOpen) {
+      this.mobileMenuOpen = false;
+    }
   }
 
   get selectedBoardName(): string {

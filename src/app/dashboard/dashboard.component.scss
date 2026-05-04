@@ -6,13 +6,14 @@ $long-color:   #f59e0b;
 // ── Layout ───────────────────────────────────────────────
 .dashboard-wrapper {
   --accent: #{$focus-color};
-  min-height: 100vh;
+  min-height: 100dvh;
   //background-image: var(--pond-bg);
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
   padding-bottom: 122px;
+  overflow-x: hidden;
 
   &.focus { --accent: #{$focus-color}; }
   &.short { --accent: #{$short-color}; }
@@ -350,6 +351,55 @@ $long-color:   #f59e0b;
   display: flex; align-items: center; gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.btn-mobile-menu {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid #93c5fd;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #1e3a8a;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-direction: column;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+
+  span {
+    width: 16px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    display: block;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+    transform-origin: center;
+  }
+
+  &:hover {
+    border-color: #60a5fa;
+    background: rgba(219, 234, 254, 0.9);
+  }
+
+  &.open {
+    span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+
+    span:nth-child(2) {
+      opacity: 0;
+    }
+
+    span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
+    }
+  }
+}
+
+.mobile-menu-backdrop {
+  display: none;
 }
 
 .board-controls {
@@ -1006,15 +1056,77 @@ $long-color:   #f59e0b;
 
 @media (max-width: 620px) {
   .dashboard-wrapper {
-    padding-bottom: 138px;
+    padding-bottom: 1rem;
+  }
+
+  .tasks-drawer {
+    width: 100vw;
+    max-width: none;
+    border-left: none;
+  }
+
+  .drawer-header,
+  .task-form,
+  .task-list,
+  .drawer-finish-early {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .task-row {
+    grid-template-columns: auto 1fr auto auto;
+    grid-template-rows: auto auto;
+    gap: 0.35rem 0.5rem;
+
+    .drag-handle {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      align-self: center;
+    }
+
+    .task-name {
+      grid-column: 2;
+      grid-row: 1;
+      white-space: normal;
+      line-height: 1.2;
+    }
+
+    .btn-pick-task {
+      grid-column: 3 / 5;
+      grid-row: 1;
+      justify-self: end;
+    }
+
+    .task-meta {
+      grid-column: 2 / 5;
+      grid-row: 2;
+      white-space: normal;
+      line-height: 1.2;
+      font-size: 0.74rem;
+    }
+
+    .btn-edit-task {
+      grid-column: 3;
+      grid-row: 2;
+      justify-self: end;
+    }
+
+    .btn-remove-task {
+      grid-column: 4;
+      grid-row: 2;
+      justify-self: end;
+    }
   }
 
   .progress-dock {
-    padding: 0.65rem 0.55rem 0.75rem;
+    position: static;
+    padding: 0.8rem 0.45rem calc(0.6rem + env(safe-area-inset-bottom));
+    background: transparent;
+    margin-top: 0.35rem;
   }
 
   .progress-bars {
-    width: calc(100vw - 1.1rem);
+    width: 100%;
     padding: 0.6rem 0.65rem;
   }
 
@@ -1048,5 +1160,169 @@ $long-color:   #f59e0b;
     max-width: none;
   }
 
+}
+
+@media (max-width: 900px) {
+  .dashboard-wrapper {
+    padding-bottom: 1rem;
+  }
+
+  .progress-dock {
+    position: static;
+    padding: 0.75rem 0.65rem 0.65rem;
+    background: transparent;
+    margin-top: 0.35rem;
+  }
+
+  .progress-bars {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .dashboard-header {
+    z-index: 35;
+
+    .header-content {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 0.55rem;
+      padding-top: 0.7rem;
+      padding-bottom: 0.75rem;
+    }
+
+    .brand {
+      justify-content: flex-start;
+      font-size: 1rem;
+    }
+  }
+
+  .btn-mobile-menu {
+    display: inline-flex;
+  }
+
+  .header-actions {
+    display: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+    width: 100%;
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    right: 0;
+    padding: 0.7rem;
+    border: 1px solid rgba(191, 219, 254, 0.68);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(64, 103, 159, 0.9) 0%, rgba(64, 103, 159, 0.82) 100%);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+    z-index: 40;
+
+    &.mobile-open {
+      display: grid;
+    }
+  }
+
+  .board-controls {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 0.35rem;
+    width: 100%;
+  }
+
+  .board-select {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .btn-tasks,
+  .btn-history,
+  .btn-logout {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.48rem 0.55rem;
+  }
+
+  .mobile-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.28);
+    z-index: 30;
+  }
+
+  .dashboard-main {
+    padding: 1.1rem 0.65rem;
+  }
+
+  .pomodoro-card {
+    max-width: none;
+    width: 100%;
+    border-radius: 18px;
+    padding: 1.1rem 0.9rem 1rem;
+    gap: 1.2rem;
+  }
+
+  .mode-tabs {
+    width: 100%;
+    justify-content: space-between;
+
+    span {
+      flex: 1;
+      text-align: center;
+      padding: 0.45rem 0.4rem;
+      font-size: 0.76rem;
+    }
+  }
+
+  .timer-ring-wrapper {
+    width: min(62vw, 210px);
+    height: min(62vw, 210px);
+  }
+
+  .timer-display {
+    .timer-time {
+      font-size: clamp(2.15rem, 9vw, 2.8rem);
+    }
+  }
+
+  .timer-controls {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+
+    .btn-primary,
+    .btn-restart-pomodoro {
+      grid-column: 1 / -1;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      order: -1;
+      padding: 0.72rem 1rem;
+      border-radius: 12px;
+      min-height: 46px;
+      font-size: 0.94rem;
+    }
+
+    .btn-reset,
+    .btn-skip {
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+    }
+  }
+
+  .timer-hint {
+    margin-top: -0.15rem;
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
 }
 

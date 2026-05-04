@@ -112,31 +112,43 @@
         </svg>
         <span>Pomodoro Pond</span>
       </div>
-      <div class="header-actions">
+      <button
+        class="btn-mobile-menu"
+        [class.open]="mobileMenuOpen"
+        type="button"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen"
+        [attr.aria-label]="mobileMenuOpen ? 'Cerrar menu' : 'Abrir menu'"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="header-actions" [class.mobile-open]="mobileMenuOpen">
       <div class="board-controls">
-        <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event)">
+        <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event); closeMobileMenu()">
           <option *ngFor="let board of boards" [ngValue]="board.id">{{ board.name }}</option>
         </select>
-        <button class="btn-board-add" (click)="createBoard()" title="Crear board" aria-label="Crear board" type="button">
+        <button class="btn-board-add" (click)="createBoard(); closeMobileMenu()" title="Crear board" aria-label="Crear board" type="button">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             <path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </button>
-        <button class="btn-board-edit" (click)="beginEditBoard()" title="Editar board" aria-label="Editar board" type="button">
+        <button class="btn-board-edit" (click)="beginEditBoard(); closeMobileMenu()" title="Editar board" aria-label="Editar board" type="button">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4 20h4l9.5-9.5a1.4 1.4 0 0 0 0-2L15.5 6a1.4 1.4 0 0 0-2 0L4 15.5V20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
             <path d="M12 7.5l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </button>
-        <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board" aria-label="Borrar board" type="button">
+        <button class="btn-board-delete" (click)="deleteCurrentBoard(); closeMobileMenu()" title="Borrar board" aria-label="Borrar board" type="button">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
-      <button class="btn-tasks" (click)="showTasks = !showTasks" [class.active]="showTasks">
+      <button class="btn-tasks" (click)="showTasks = !showTasks; closeMobileMenu()" [class.active]="showTasks">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -144,7 +156,7 @@
         Tareas
         <span class="task-count" *ngIf="tasks.length > 0">{{ tasks.length }}</span>
       </button>
-      <button class="btn-history" (click)="goToHistory()">
+      <button class="btn-history" (click)="goToHistory(); closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           <path d="M7 3v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -154,7 +166,7 @@
         </svg>
         Historial
       </button>
-      <button class="btn-logout" (click)="logout()">
+      <button class="btn-logout" (click)="logout(); closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -165,6 +177,7 @@
       </div>
     </div>
   </header>
+  <div class="mobile-menu-backdrop" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
 
   <main class="dashboard-main">
     <div class="pomodoro-card" [ngClass]="mode">

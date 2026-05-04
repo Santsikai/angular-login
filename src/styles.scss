@@ -10,11 +10,18 @@ body {
     linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18)),
     url('/assets/lake.png');
   background-image: var(--pond-bg);
-  background-size: 100% auto;
-  background-position: center;
+  background-size: cover;
+  background-position: center top;
   background-repeat: no-repeat;
   background-attachment: fixed;
   color: #1a1a2e;
   min-height: 100vh;
+}
+
+@media (max-width: 900px) {
+  body {
+    background-attachment: scroll;
+    background-size: cover;
+  }
 }
 
