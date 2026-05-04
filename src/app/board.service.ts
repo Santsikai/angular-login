@@ -38,6 +38,11 @@ export class BoardService {
     return this.http.post<PomodoroBoard>(`${API_BASE}/boards`, { userId: USER_ID, name: cleanName });
   }
 
+  updateBoard(boardId: string, name: string): Observable<PomodoroBoard> {
+    const cleanName = name.trim().slice(0, 40) || 'Nuevo board';
+    return this.http.put<PomodoroBoard>(`${API_BASE}/boards/${boardId}`, { name: cleanName });
+  }
+
   deleteBoard(boardId: string): Observable<{ deleted: boolean }> {
     return this.http.delete<{ deleted: boolean }>(`${API_BASE}/boards/${boardId}`);
   }

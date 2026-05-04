@@ -8,8 +8,24 @@
           <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event)">
             <option *ngFor="let board of boards" [ngValue]="board.id">{{ board.name }}</option>
           </select>
-          <button class="btn-board-add" (click)="createBoard()" title="Crear board">+</button>
-          <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board">-</button>
+          <button class="btn-board-add" (click)="createBoard()" title="Crear board" aria-label="Crear board" type="button">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="btn-board-edit" (click)="beginEditBoard()" title="Editar board" aria-label="Editar board" type="button">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 20h4l9.5-9.5a1.4 1.4 0 0 0 0-2L15.5 6a1.4 1.4 0 0 0-2 0L4 15.5V20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M12 7.5l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board" aria-label="Borrar board" type="button">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -77,4 +93,32 @@
       </div>
     </section>
   </main>
+
+  <div class="app-modal-backdrop" *ngIf="showCreateBoardModal" (click)="closeCreateBoardModal()">
+    <div class="app-modal" (click)="$event.stopPropagation()">
+      <h4>Crear board</h4>
+      <div class="app-modal-field">
+        <label>Nombre del board</label>
+        <input type="text" [(ngModel)]="draftBoardName" placeholder="Ej. Estudio" (keyup.enter)="confirmCreateBoard()">
+      </div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn secondary" (click)="closeCreateBoardModal()">Cancelar</button>
+        <button class="app-modal-btn primary" (click)="confirmCreateBoard()">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-modal-backdrop" *ngIf="showEditBoardModal" (click)="closeEditBoardModal()">
+    <div class="app-modal" (click)="$event.stopPropagation()">
+      <h4>Editar board</h4>
+      <div class="app-modal-field">
+        <label>Nombre del board</label>
+        <input type="text" [(ngModel)]="draftEditBoardName" placeholder="Nombre del board" (keyup.enter)="confirmEditBoard()">
+      </div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn secondary" (click)="closeEditBoardModal()">Cancelar</button>
+        <button class="app-modal-btn primary" (click)="confirmEditBoard()">Guardar</button>
+      </div>
+    </div>
+  </div>
 </div>

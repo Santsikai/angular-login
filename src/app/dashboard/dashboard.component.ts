@@ -1,4 +1,5 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { TaskHistoryOutcome, TaskHistoryService } from '../task-history.service';
@@ -50,6 +51,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   durations: Record<PomodoroMode, number> = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 };
   draftMinutes: Record<PomodoroMode, number> = { focus: 25, short: 5, long: 15 };
   tasks: TaskItem[] = [];
+  showTaskEditModal = false;
+  editingTaskIndex = -1;
+  editTaskTitle = '';
+  editTaskHours = 0;
+  editTaskMinutes = 25;
+  showCreateBoardModal = false;
+  draftBoardName = '';
+  showEditBoardModal = false;
+  draftEditBoardName = '';
   draftTaskTitle = '';
   draftTaskHours = 0;
   draftTaskMinutes = 25;
@@ -223,6 +233,71 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.draftTaskMinutes = 25;
   }
 
+  canEditTask(index: number): boolean {
+    if (index < 0 || index >= this.tasks.length || this.taskDecisionOpen) {
+      return false;
+    }
+    const outcome = this.tasks[index].outcome;
+    return outcome === 'pending' || outcome === 'paused';
+  }
+
+  beginEditTask(index: number): void {
+    if (!this.canEditTask(index)) {
+      return;
+    }
+
+    const task = this.tasks[index];
+    this.editingTaskIndex = index;
+    this.editTaskTitle = task.title;
+    this.editTaskHours = Math.floor(task.minutes / 60);
+    this.editTaskMinutes = task.minutes % 60;
+    this.showTaskEditModal = true;
+  }
+
+  closeTaskEditModal(): void {
+    this.showTaskEditModal = false;
+    this.editingTaskIndex = -1;
+    this.editTaskTitle = '';
+    this.editTaskHours = 0;
+    this.editTaskMinutes = 25;
+  }
+
+  clampEditTaskDuration(): void {
+    this.editTaskHours = Math.max(0, Math.min(12, Math.floor(this.editTaskHours || 0)));
+    this.editTaskMinutes = Math.max(0, Math.min(59, Math.floor(this.editTaskMinutes || 0)));
+    if (this.editTaskHours === 0 && this.editTaskMinutes === 0) {
+      this.editTaskMinutes = 1;
+    }
+  }
+
+  saveTaskEdit(): void {
+    const index = this.editingTaskIndex;
+    if (this.editingTaskIndex !== index || index < 0 || index >= this.tasks.length) {
+      return;
+    }
+
+    const title = this.editTaskTitle.trim();
+    if (!title) {
+      return;
+    }
+
+    const hours = Math.max(0, Math.min(12, Math.floor(this.editTaskHours || 0)));
+    const mins = Math.max(0, Math.min(59, Math.floor(this.editTaskMinutes || 0)));
+    const minutes = Math.max(1, Math.min(12 * 60, (hours * 60) + mins));
+
+    const task = this.tasks[index];
+    task.title = title;
+    task.minutes = minutes;
+
+    if (this.mode === 'focus' && this.running && this.sessionTaskIndex === index) {
+      this.sessionTaskTitle = title;
+      this.sessionTaskPlannedMinutes = minutes;
+    }
+
+    this.focusSecondsWorked = Math.max(0, Math.min(this.focusSecondsWorked, this.totalTaskSeconds));
+    this.closeTaskEditModal();
+  }
+
   clampDraftTaskDuration(): void {
     this.draftTaskHours = Math.max(0, Math.min(12, Math.floor(this.draftTaskHours || 0)));
     this.draftTaskMinutes = Math.max(0, Math.min(59, Math.floor(this.draftTaskMinutes || 0)));
@@ -232,13 +307,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   removeTask(index: number): void {
+    if (this.editingTaskIndex === index) {
+      this.closeTaskEditModal();
+    }
     this.tasks.splice(index, 1);
+    if (this.editingTaskIndex > index) {
+      this.editingTaskIndex--;
+    }
     if (this.totalTaskSeconds === 0) {
       this.stop();
       this.focusSecondsWorked = 0;
       return;
     }
     this.focusSecondsWorked = Math.min(this.focusSecondsWorked, this.totalTaskSeconds);
+  }
+
+  dropTask(event: CdkDragDrop<TaskItem[]>): void {
+    if (event.previousIndex === event.currentIndex || this.taskDecisionOpen || this.showTaskEditModal) {
+      return;
+    }
+
+    moveItemInArray(this.tasks, event.previousIndex, event.currentIndex);
   }
 
   canSelectTask(index: number): boolean {
@@ -397,8 +486,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   skip(): void {
+    const shouldContinue = this.running;
     this.stop();
-    this.advance();
+    this.advance(shouldContinue);
   }
 
   restartPomodoro(): void {
@@ -432,18 +522,51 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   createBoard(): void {
-    const input = window.prompt('Nombre del nuevo board:');
-    if (input === null) {
-      return;
-    }
-    const name = input.trim();
+    this.draftBoardName = '';
+    this.showCreateBoardModal = true;
+  }
+
+  closeCreateBoardModal(): void {
+    this.showCreateBoardModal = false;
+    this.draftBoardName = '';
+  }
+
+  confirmCreateBoard(): void {
+    const name = this.draftBoardName.trim();
     if (!name) {
       return;
     }
     this.boardService.createBoard(name).subscribe(board => {
+      this.closeCreateBoardModal();
       this.boards = [...this.boards, board];
       this.boardService.setActiveBoardId(board.id);
       this.onBoardChanged(board.id);
+    });
+  }
+
+  beginEditBoard(): void {
+    if (!this.selectedBoardId) {
+      return;
+    }
+    this.draftEditBoardName = this.selectedBoardName;
+    this.showEditBoardModal = true;
+  }
+
+  closeEditBoardModal(): void {
+    this.showEditBoardModal = false;
+    this.draftEditBoardName = '';
+  }
+
+  confirmEditBoard(): void {
+    const boardId = this.selectedBoardId;
+    const name = this.draftEditBoardName.trim();
+    if (!boardId || !name) {
+      return;
+    }
+
+    this.boardService.updateBoard(boardId, name).subscribe(updated => {
+      this.boards = this.boards.map(board => board.id === updated.id ? updated : board);
+      this.closeEditBoardModal();
     });
   }
 
@@ -511,7 +634,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       } else {
         this.stop();
-        this.advance();
+        this.advance(true);
       }
     }, 1000);
   }
@@ -529,11 +652,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private advance(): void {
+  private advance(continueRunning = false): void {
     if (!this.canRunPomodoro) {
       this.stop();
       return;
     }
+
+    const previousMode = this.mode;
 
     if (this.mode === 'focus') {
       this.completedPomodoros++;
@@ -548,6 +673,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.mode = 'focus';
     }
     this.secondsLeft = this.durations[this.mode];
+
+    if (this.mode !== previousMode) {
+      this.ringAlarm();
+    }
+
+    if (continueRunning) {
+      this.start();
+    }
   }
 
   private getReachedTaskBoundaryIndex(before: number, after: number): number {
@@ -880,6 +1013,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.durations = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 };
     this.draftMinutes = { focus: 25, short: 5, long: 15 };
     this.tasks = [];
+    this.showTaskEditModal = false;
+    this.editingTaskIndex = -1;
+    this.editTaskTitle = '';
+    this.editTaskHours = 0;
+    this.editTaskMinutes = 25;
+    this.showCreateBoardModal = false;
+    this.draftBoardName = '';
+    this.showEditBoardModal = false;
+    this.draftEditBoardName = '';
     this.draftTaskTitle = '';
     this.draftTaskHours = 0;
     this.draftTaskMinutes = 25;

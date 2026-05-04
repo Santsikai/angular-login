@@ -48,6 +48,37 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+router.put('/:boardId', async (req, res, next) => {
+  try {
+    const boardId = String(req.params.boardId);
+    const rawName = String(req.body.name || '').trim();
+    const name = rawName.slice(0, 120) || 'Nuevo board';
+
+    const [result] = await pool.query(
+      `UPDATE boards
+       SET name = ?
+       WHERE id = ?`,
+      [name, boardId]
+    );
+
+    if (result.affectedRows === 0) {
+      res.status(404).json({ message: 'Board no encontrado' });
+      return;
+    }
+
+    const [[updated]] = await pool.query(
+      `SELECT id, name, created_at AS createdAt
+       FROM boards
+       WHERE id = ?`,
+      [boardId]
+    );
+
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete('/:boardId', async (req, res, next) => {
   try {
     const boardId = String(req.params.boardId);

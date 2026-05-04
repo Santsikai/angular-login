@@ -37,8 +37,25 @@
       </div>
     </div>
 
-    <div class="task-list" *ngIf="tasks.length > 0; else noTasks">
-      <div class="task-row" [ngClass]="task.outcome" *ngFor="let task of tasks; let i = index">
+    <div
+      class="task-list"
+      *ngIf="tasks.length > 0; else noTasks"
+      cdkDropList
+      [cdkDropListData]="tasks"
+      [cdkDropListDisabled]="showTaskEditModal"
+      (cdkDropListDropped)="dropTask($event)"
+    >
+      <div class="task-row" [ngClass]="task.outcome" *ngFor="let task of tasks; let i = index" cdkDrag [cdkDragDisabled]="showTaskEditModal">
+        <button
+          class="drag-handle"
+          cdkDragHandle
+          title="Arrastrar para ordenar"
+          aria-label="Arrastrar tarea"
+          type="button"
+          [disabled]="showTaskEditModal"
+        >
+          ⋮⋮
+        </button>
         <span class="task-name">{{ i + 1 }}. {{ task.title }}</span>
         <button
           class="btn-pick-task"
@@ -55,6 +72,12 @@
           <span *ngIf="task.outcome === 'not-justified'"> · no terminada</span>
           <span *ngIf="task.outcome === 'paused'"> · pausada</span>
         </span>
+        <button class="btn-edit-task" (click)="beginEditTask(i)" [disabled]="!canEditTask(i)" title="Editar tarea" aria-label="Editar tarea" type="button">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 20h4l9.5-9.5a1.4 1.4 0 0 0 0-2L15.5 6a1.4 1.4 0 0 0-2 0L4 15.5V20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M12 7.5l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
         <button class="btn-remove-task" (click)="removeTask(i)" title="Eliminar">&#x2715;</button>
       </div>
     </div>
@@ -94,8 +117,24 @@
         <select class="board-select" [ngModel]="selectedBoardId" (ngModelChange)="onBoardChanged($event)">
           <option *ngFor="let board of boards" [ngValue]="board.id">{{ board.name }}</option>
         </select>
-        <button class="btn-board-add" (click)="createBoard()" title="Crear board">+</button>
-        <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board">-</button>
+        <button class="btn-board-add" (click)="createBoard()" title="Crear board" aria-label="Crear board" type="button">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="btn-board-edit" (click)="beginEditBoard()" title="Editar board" aria-label="Editar board" type="button">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 20h4l9.5-9.5a1.4 1.4 0 0 0 0-2L15.5 6a1.4 1.4 0 0 0-2 0L4 15.5V20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M12 7.5l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="btn-board-delete" (click)="deleteCurrentBoard()" title="Borrar board" aria-label="Borrar board" type="button">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
       <button class="btn-tasks" (click)="showTasks = !showTasks" [class.active]="showTasks">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -204,24 +243,6 @@
         Ajustes
       </button>
 
-      <!-- Settings panel -->
-      <div class="settings-panel" *ngIf="showSettings">
-        <h4>Duración (minutos)</h4>
-        <div class="settings-row">
-          <label>Enfoque</label>
-          <input type="number" min="1" max="90" [(ngModel)]="draftMinutes.focus" (change)="clampDraft('focus')">
-        </div>
-        <div class="settings-row">
-          <label>Descanso corto</label>
-          <input type="number" min="1" max="60" [(ngModel)]="draftMinutes.short" (change)="clampDraft('short')">
-        </div>
-        <div class="settings-row">
-          <label>Descanso largo</label>
-          <input type="number" min="1" max="60" [(ngModel)]="draftMinutes.long" (change)="clampDraft('long')">
-        </div>
-        <button class="btn-apply" (click)="applySettings()">Aplicar</button>
-      </div>
-
       <div class="task-alarm-backdrop" *ngIf="taskDecisionOpen">
         <div class="task-alarm">
           <button class="btn-alarm-close" *ngIf="taskDecisionManual" (click)="closeTaskDecisionModal()" title="Cerrar">x</button>
@@ -259,6 +280,80 @@
 
     </div>
   </main>
+
+  <div class="app-modal-backdrop" *ngIf="showTaskEditModal" (click)="closeTaskEditModal()">
+    <div class="app-modal" (click)="$event.stopPropagation()">
+      <h4>Editar tarea</h4>
+      <div class="app-modal-field">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="editTaskTitle" placeholder="Nombre de la tarea" (keyup.enter)="saveTaskEdit()">
+      </div>
+      <div class="app-modal-duration-row">
+        <div class="app-modal-field">
+          <label>Horas</label>
+          <input type="number" min="0" max="12" [(ngModel)]="editTaskHours" (change)="clampEditTaskDuration()">
+        </div>
+        <div class="app-modal-field">
+          <label>Minutos</label>
+          <input type="number" min="0" max="59" [(ngModel)]="editTaskMinutes" (change)="clampEditTaskDuration()" (keyup.enter)="saveTaskEdit()">
+        </div>
+      </div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn secondary" (click)="closeTaskEditModal()">Cancelar</button>
+        <button class="app-modal-btn primary" (click)="saveTaskEdit()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-modal-backdrop" *ngIf="showSettings" (click)="showSettings = false">
+    <div class="app-modal settings-modal" (click)="$event.stopPropagation()">
+      <h4>Duración (minutos)</h4>
+      <div class="settings-row">
+        <label>Enfoque</label>
+        <input type="number" min="1" max="90" [(ngModel)]="draftMinutes.focus" (change)="clampDraft('focus')">
+      </div>
+      <div class="settings-row">
+        <label>Descanso corto</label>
+        <input type="number" min="1" max="60" [(ngModel)]="draftMinutes.short" (change)="clampDraft('short')">
+      </div>
+      <div class="settings-row">
+        <label>Descanso largo</label>
+        <input type="number" min="1" max="60" [(ngModel)]="draftMinutes.long" (change)="clampDraft('long')">
+      </div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn secondary" (click)="showSettings = false">Cancelar</button>
+        <button class="app-modal-btn primary" (click)="applySettings()">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-modal-backdrop" *ngIf="showCreateBoardModal" (click)="closeCreateBoardModal()">
+    <div class="app-modal" (click)="$event.stopPropagation()">
+      <h4>Crear board</h4>
+      <div class="app-modal-field">
+        <label>Nombre del board</label>
+        <input type="text" [(ngModel)]="draftBoardName" placeholder="Ej. Trabajo profundo" (keyup.enter)="confirmCreateBoard()">
+      </div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn secondary" (click)="closeCreateBoardModal()">Cancelar</button>
+        <button class="app-modal-btn primary" (click)="confirmCreateBoard()">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-modal-backdrop" *ngIf="showEditBoardModal" (click)="closeEditBoardModal()">
+    <div class="app-modal" (click)="$event.stopPropagation()">
+      <h4>Editar board</h4>
+      <div class="app-modal-field">
+        <label>Nombre del board</label>
+        <input type="text" [(ngModel)]="draftEditBoardName" placeholder="Nombre del board" (keyup.enter)="confirmEditBoard()">
+      </div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn secondary" (click)="closeEditBoardModal()">Cancelar</button>
+        <button class="app-modal-btn primary" (click)="confirmEditBoard()">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <section class="progress-dock" *ngIf="tasks.length > 0">
     <div class="progress-bars">

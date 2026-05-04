@@ -20,6 +20,10 @@ interface DayCard {
 export class HistoryComponent implements OnInit {
   boards: PomodoroBoard[] = [];
   selectedBoardId = '';
+  showCreateBoardModal = false;
+  draftBoardName = '';
+  showEditBoardModal = false;
+  draftEditBoardName = '';
   allEntries: TaskHistoryEntry[] = [];
   weekStart = this.getWeekStart(new Date());
   weekDays: DayCard[] = [];
@@ -75,19 +79,52 @@ export class HistoryComponent implements OnInit {
   }
 
   createBoard(): void {
-    const input = window.prompt('Nombre del nuevo board:');
-    if (input === null) {
-      return;
-    }
-    const name = input.trim();
+    this.draftBoardName = '';
+    this.showCreateBoardModal = true;
+  }
+
+  closeCreateBoardModal(): void {
+    this.showCreateBoardModal = false;
+    this.draftBoardName = '';
+  }
+
+  confirmCreateBoard(): void {
+    const name = this.draftBoardName.trim();
     if (!name) {
       return;
     }
     this.boardService.createBoard(name).subscribe(board => {
+      this.closeCreateBoardModal();
       this.boards = [...this.boards, board];
       this.selectedBoardId = board.id;
       this.boardService.setActiveBoardId(board.id);
       this.loadHistory();
+    });
+  }
+
+  beginEditBoard(): void {
+    if (!this.selectedBoardId) {
+      return;
+    }
+    this.draftEditBoardName = this.selectedBoardName;
+    this.showEditBoardModal = true;
+  }
+
+  closeEditBoardModal(): void {
+    this.showEditBoardModal = false;
+    this.draftEditBoardName = '';
+  }
+
+  confirmEditBoard(): void {
+    const boardId = this.selectedBoardId;
+    const name = this.draftEditBoardName.trim();
+    if (!boardId || !name) {
+      return;
+    }
+
+    this.boardService.updateBoard(boardId, name).subscribe(updated => {
+      this.boards = this.boards.map(board => board.id === updated.id ? updated : board);
+      this.closeEditBoardModal();
     });
   }
 
