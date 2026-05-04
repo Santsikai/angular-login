@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { AuthService } from './auth/auth.service';
 
 export const DEFAULT_BOARD_ID = 'board-default';
 export const DASHBOARD_STATE_KEY_PREFIX = 'pomodoro-pond-dashboard-state-v1';
@@ -15,15 +16,14 @@ export interface PomodoroBoard {
 const API_BASE = globalThis.location?.hostname === 'localhost'
   ? 'http://localhost:3001/api'
   : '/api';
-const USER_ID = 1;
 const ACTIVE_BOARD_KEY = 'pomodoro-pond-active-board-v1';
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
   getBoards(): Observable<PomodoroBoard[]> {
-    return this.http.get<PomodoroBoard[]>(`${API_BASE}/boards?userId=${USER_ID}`);
+    return this.http.get<PomodoroBoard[]>(`${API_BASE}/boards?userId=${this.authService.getUserId()}`);
   }
 
   getActiveBoardId(): string {
@@ -36,7 +36,7 @@ export class BoardService {
 
   createBoard(name: string): Observable<PomodoroBoard> {
     const cleanName = name.trim().slice(0, 40) || 'Nuevo board';
-    return this.http.post<PomodoroBoard>(`${API_BASE}/boards`, { userId: USER_ID, name: cleanName });
+    return this.http.post<PomodoroBoard>(`${API_BASE}/boards`, { userId: this.authService.getUserId(), name: cleanName });
   }
 
   updateBoard(boardId: string, name: string): Observable<PomodoroBoard> {

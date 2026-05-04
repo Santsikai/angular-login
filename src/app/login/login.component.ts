@@ -19,14 +19,15 @@ export class LoginComponent {
     this.errorMessage = '';
     this.loading = true;
 
-    setTimeout(() => {
-      const success = this.authService.login(this.username, this.password);
-      this.loading = false;
-      if (success) {
+    this.authService.login(this.username, this.password).subscribe({
+      next: () => {
+        this.loading = false;
         this.router.navigate(['/dashboard']);
-      } else {
-        this.errorMessage = 'Usuario o contraseña incorrectos.';
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorMessage = err?.error?.message || 'Usuario o contraseña incorrectos.';
       }
-    }, 600);
+    });
   }
 }

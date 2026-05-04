@@ -6,6 +6,7 @@ const { pool } = require('./config/db');
 const boardsRoutes = require('./routes/boards.routes');
 const tasksRoutes = require('./routes/tasks.routes');
 const historyRoutes = require('./routes/history.routes');
+const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -22,6 +23,7 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardsRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/history', historyRoutes);
