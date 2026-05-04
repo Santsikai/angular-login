@@ -231,6 +231,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.draftTaskTitle = '';
     this.draftTaskHours = 0;
     this.draftTaskMinutes = 25;
+    this.syncTasksToBackend();
   }
 
   canEditTask(index: number): boolean {
@@ -295,6 +296,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     this.focusSecondsWorked = Math.max(0, Math.min(this.focusSecondsWorked, this.totalTaskSeconds));
+    this.syncTasksToBackend();
     this.closeTaskEditModal();
   }
 
@@ -317,9 +319,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.totalTaskSeconds === 0) {
       this.stop();
       this.focusSecondsWorked = 0;
-      return;
+    } else {
+      this.focusSecondsWorked = Math.min(this.focusSecondsWorked, this.totalTaskSeconds);
     }
-    this.focusSecondsWorked = Math.min(this.focusSecondsWorked, this.totalTaskSeconds);
+    this.syncTasksToBackend();
   }
 
   dropTask(event: CdkDragDrop<TaskItem[]>): void {
@@ -328,6 +331,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     moveItemInArray(this.tasks, event.previousIndex, event.currentIndex);
+    this.syncTasksToBackend();
   }
 
   canSelectTask(index: number): boolean {
@@ -360,6 +364,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const insertAt = targetIndex > index ? targetIndex - 1 : targetIndex;
     this.tasks.splice(insertAt, 0, selected);
     this.focusSecondsWorked = this.getTaskStartSeconds(insertAt);
+    this.syncTasksToBackend();
   }
 
   finishCurrentTaskEarly(): void {
@@ -390,6 +395,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.tasks[this.taskDecisionIndex].outcome = 'done';
       this.saveTaskHistory('done');
       this.completeTaskAndCloseDecision();
+      this.syncTasksToBackend();
       this.openCelebration(completedTitle);
       return;
     }
@@ -412,6 +418,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     task.minutes = task.minutes + Math.floor(task.minutes / 4);
     this.focusSecondsWorked -= extraSeconds;
     this.completeTaskAndCloseDecision();
+    this.syncTasksToBackend();
   }
 
   pauseCurrentTask(): void {
@@ -441,6 +448,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.taskDecisionWorkedSeconds = 0;
     this.taskDecisionPlannedMinutes = 0;
 
+    this.syncTasksToBackend();
     if (this.canRunPomodoro) {
       this.start();
     }
@@ -522,6 +530,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const targetBoard = this.boards.find(b => b.id === boardId);
     this.restoreState();
     this.applyBoardSettings(targetBoard?.pomodoroState);
+    this.loadTasksFromBackend();
   }
 
   createBoard(): void {
@@ -597,6 +606,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.boardService.setActiveBoardId(nextId);
       this.resetBoardRuntime();
       this.restoreState();
+      const nextBoard = this.boards.find(b => b.id === nextId);
+      this.applyBoardSettings(nextBoard?.pomodoroState);
+      this.loadTasksFromBackend();
     });
   }
 
@@ -923,6 +935,36 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  private loadTasksFromBackend(): void {
+    if (!this.selectedBoardId) { return; }
+    this.boardService.getTasksForBoard(this.selectedBoardId).subscribe({
+      next: (rows) => {
+        this.tasks = rows
+          .filter((r: any) => typeof r.title === 'string' && typeof r.minutes === 'number')
+          .map((r: any) => ({
+            title: r.title,
+            minutes: Math.max(1, Math.floor(r.minutes)),
+            outcome: (['pending', 'done', 'justified', 'not-justified', 'paused'].includes(r.outcome)
+              ? r.outcome : 'pending') as TaskItem['outcome']
+          }));
+        const total = this.totalTaskSeconds;
+        if (total > 0) {
+          this.focusSecondsWorked = Math.min(this.focusSecondsWorked, total);
+        } else {
+          this.focusSecondsWorked = 0;
+        }
+      },
+      error: () => { /* Keep localStorage tasks as fallback */ }
+    });
+  }
+
+  private syncTasksToBackend(): void {
+    if (!this.selectedBoardId) { return; }
+    this.boardService.saveTasksBulk(this.selectedBoardId, this.tasks).subscribe({
+      error: () => { /* ignore */ }
+    });
+  }
+
   private restoreState(): void {
     try {
       const raw = localStorage.getItem(this.getStateStorageKey());
@@ -1012,6 +1054,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.selectedBoardId = board.id;
           this.boardService.setActiveBoardId(board.id);
           this.restoreState();
+          this.loadTasksFromBackend();
         });
         return;
       }
@@ -1022,6 +1065,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.boardService.setActiveBoardId(this.selectedBoardId);
       this.restoreState();
       this.applyBoardSettings(activeBoard.pomodoroState);
+      this.loadTasksFromBackend();
     });
   }
 

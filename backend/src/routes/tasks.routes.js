@@ -126,6 +126,40 @@ router.patch('/:taskId', async (req, res, next) => {
   }
 });
 
+router.put('/bulk/:boardId', async (req, res, next) => {
+  try {
+    const boardId = String(req.params.boardId);
+    const tasksRaw = Array.isArray(req.body.tasks) ? req.body.tasks : [];
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.query('DELETE FROM tasks WHERE board_id = ?', [boardId]);
+      for (let i = 0; i < tasksRaw.length; i++) {
+        const t = tasksRaw[i];
+        const title = String(t.title || '').trim().slice(0, 255);
+        const minutes = Math.max(1, Math.floor(Number(t.minutes || 1)));
+        const validOutcomes = ['pending', 'done', 'justified', 'not-justified', 'paused'];
+        const outcome = validOutcomes.includes(t.outcome) ? t.outcome : 'pending';
+        if (!title) { continue; }
+        await conn.query(
+          `INSERT INTO tasks (board_id, title, planned_minutes, outcome, position) VALUES (?, ?, ?, ?, ?)`,
+          [boardId, title, minutes, outcome, i]
+        );
+      }
+      await conn.commit();
+      res.json({ saved: true });
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete('/:taskId', async (req, res, next) => {
   try {
     const taskId = Number(req.params.taskId);

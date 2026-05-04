@@ -51,4 +51,14 @@ export class BoardService {
   savePomodoroState(boardId: string, state: any): Observable<{ saved: boolean }> {
     return this.http.patch<{ saved: boolean }>(`${API_BASE}/boards/${boardId}/state`, { state });
   }
+
+  getTasksForBoard(boardId: string): Observable<{ title: string; minutes: number; outcome: string }[]> {
+    return this.http.get<{ title: string; minutes: number; outcome: string }[]>(
+      `${API_BASE}/tasks?boardId=${encodeURIComponent(boardId)}`
+    );
+  }
+
+  saveTasksBulk(boardId: string, tasks: { title: string; minutes: number; outcome: string }[]): Observable<{ saved: boolean }> {
+    return this.http.put<{ saved: boolean }>(`${API_BASE}/tasks/bulk/${boardId}`, { tasks });
+  }
 }
